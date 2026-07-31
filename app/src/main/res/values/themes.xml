@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Deliberately minimal. Colours, typography and shapes are all declared in
+        Kotlin (designsystem/Theme.kt) so light/dark resolution has exactly one
+        source of truth. This theme only has to keep the pre-Compose window from
+        flashing a colour the app never uses.
+    -->
+    <style name="Theme.TOEFLVocab" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

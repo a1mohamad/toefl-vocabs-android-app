@@ -166,13 +166,9 @@ jobs:
           path: screenshots/
 
   # ---------------------------------------------------------------------------
-  # Job 3: installable APK. Tags only (v1.1, v1.2, ...).
-  #
-  # Unsigned on purpose: signing would need a keystore in repository secrets, and
-  # this project deliberately keeps everything it needs in the open. The artifact
-  # installs with `adb install` or by sideloading with "install unknown apps"
-  # enabled — Android has no equivalent of the 7-day free-provisioning expiry the
-  # iOS build lives with.
+  # Job 3: signed, installable APK. Tags only (v1.1, v1.2, ...). The keystore and
+  # passwords are restored from GitHub Actions secrets and never stored in the
+  # repository or uploaded as artifacts.
   # ---------------------------------------------------------------------------
   release-build:
     name: Build release APK
@@ -194,18 +190,59 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
-      - name: Build unsigned release APK
-        run: gradle assembleRelease --stacktrace
-
-      - name: Rename the artifact
+      - name: Restore release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          SRC=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
-          echo "Built: $SRC"
-          cp "$SRC" "TOEFLVocab-${{ github.ref_name }}-unsigned.apk"
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not configured."
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" \
+            | base64 --decode > "$RUNNER_TEMP/toeflvocab.jks"
+          test -s "$RUNNER_TEMP/toeflvocab.jks"
+
+      - name: Build signed release APK
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/toeflvocab.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not configured."
+              exit 1
+            fi
+          done
+          gradle assembleRelease --stacktrace
+
+      - name: Verify and package the signed APK
+        run: |
+          APK=app/build/outputs/apk/release/app-release.apk
+          if [ ! -f "$APK" ]; then
+            echo "::error::Expected release APK not found at $APK."
+            find app/build/outputs/apk/release -maxdepth 1 -type f -print
+            exit 1
+          fi
+
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner \
+            | sort -V | tail -n 1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found in the Android SDK."
+            exit 1
+          fi
+
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          cp "$APK" "TOEFLVocab-${{ github.ref_name }}.apk"
           ls -lh TOEFLVocab-*.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TOEFLVocab-unsigned-apk-${{ github.ref_name }}
+          name: TOEFLVocab-apk-${{ github.ref_name }}
           path: TOEFLVocab-*.apk
+
+      - name: Remove restored keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/toeflvocab.jks"

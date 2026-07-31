@@ -1,0 +1,19 @@
+# Line endings are normalised to LF in the repository and checked out native.
+* text=auto
+
+# Shell scripts must stay LF even on a Windows checkout. This repository is
+# edited on Windows and executed on Linux CI runners, and a shell script with
+# CRLF fails there with a bare `\r: command not found` — one of the least
+# informative errors in the whole toolchain.
+*.sh text eol=lf
+
+# Gradle wrapper scripts, same reason.
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+
+# Keep binaries byte-exact. Launcher icons are generated, and a PNG that git
+# "helpfully" normalised would be silently corrupt.
+*.png binary
+*.jar binary
+*.apk binary
+*.aab binary

@@ -6,12 +6,14 @@
 
 ### Offline Android vocabulary trainer built entirely on Windows — no Android Studio, no local SDK, no emulator on the developer's machine
 
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Gradle](https://img.shields.io/badge/Gradle-Kotlin%20DSL-02303A?logo=gradle&logoColor=white)](https://gradle.org/)
 [![TextToSpeech](https://img.shields.io/badge/TextToSpeech-On--Device%20Speech-3DDC84?logo=android&logoColor=white)](https://developer.android.com/reference/android/speech/tts/TextToSpeech)
 [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI%2FCD-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Platform](https://img.shields.io/badge/Platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
+[![Download](https://img.shields.io/badge/Download-Signed%20APK-3DDC84?logo=android&logoColor=white)](https://github.com/a1mohamad/toefl-vocabs-android-app/releases/latest)
+[![Release](https://img.shields.io/github/v/release/a1mohamad/toefl-vocabs-android-app?label=Release)](https://github.com/a1mohamad/toefl-vocabs-android-app/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/a1mohamad/toefl-vocabs-android-app/ci.yml?branch=main&label=CI)](https://github.com/a1mohamad/toefl-vocabs-android-app/actions)
 [![License](https://img.shields.io/github/license/a1mohamad/toefl-vocabs-android-app)](LICENSE)
 
@@ -19,11 +21,14 @@
 
 [![Dataset](https://img.shields.io/badge/Dataset-Bundled%20JSON-1A73E8?logo=json&logoColor=white)](app/src/main/assets/VocabData/vocabs.json)
 [![Design Notes](https://img.shields.io/badge/Design%20Notes-Project%20Plan-6E56CF?logo=markdown&logoColor=white)](docs/PROJECT_PLAN.md)
+![Research Lab](https://img.shields.io/badge/Research%20Lab-Project%20Page-222222?logo=githubpages&logoColor=white)
 [![iOS Original](https://img.shields.io/badge/iOS%20Original-SwiftUI-F05138?logo=swift&logoColor=white)](https://github.com/a1mohamad/toefl-vocabs-ios-app)
 
 **Contact and Profiles**
 
 [![Gmail](https://img.shields.io/badge/Gmail-a1mohamad.askari%40gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:a1mohamad.askari@gmail.com)
+[![iCloud](https://img.shields.io/badge/iCloud-amirmohmdaskari%40icloud.com-3693F3?logo=icloud&logoColor=white)](mailto:amirmohmdaskari@icloud.com)
+[![Phone](https://img.shields.io/badge/Phone-%2B98%20901%20222%203122-25D366?logo=whatsapp&logoColor=white)](tel:+989012223122)
 [![Website](https://img.shields.io/badge/Website-a1mohamad.github.io-4285F4?logo=googlechrome&logoColor=white)](https://a1mohamad.github.io)
 [![GitHub](https://img.shields.io/badge/GitHub-a1mohamad-181717?logo=github&logoColor=white)](https://github.com/a1mohamad)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Amir%20Mohammad%20Askari-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amirmohammad-askari/)
@@ -51,8 +56,53 @@ Android SDK on it. Nothing is ever built locally.
 
 ---
 
+## Download
+
+<div align="center">
+
+### [Download the latest signed APK](https://github.com/a1mohamad/toefl-vocabs-android-app/releases/latest)
+
+</div>
+
+Grab `TOEFLVocab-<version>.apk` from the
+[Releases page](https://github.com/a1mohamad/toefl-vocabs-android-app/releases/latest).
+It is a release build signed with a stable key, so it installs by tapping the
+file — there is nothing to sideload, nothing to re-sign, and **nothing expires**.
+
+| | |
+|---|---|
+| Device | Android 8.0 (API 26) or newer |
+| Architecture | Any — one universal APK covers arm64-v8a, armeabi-v7a, x86 and x86_64 |
+| Account | None. No sign-in, no server, **no network access at all** |
+
+1. Download the `.apk` from the Releases page.
+2. Open it from your notification shade or file manager.
+3. Android will say the source is not allowed to install unknown apps — tap **Settings**, turn on **Allow from this source**, then go back.
+4. If Play Protect warns about an unrecognised developer, tap **More details** → **Install anyway**. This is expected for any app distributed outside the Play Store.
+5. Tap **Install**, then **Open**.
+
+With a cable and platform-tools instead:
+
+```bash
+adb install -r TOEFLVocab-<version>.apk
+```
+
+Each release ships a `SHA256SUMS` file next to the APK if you want to verify the
+download before installing.
+
+> **Two things that will cost you data.** Never uninstall the app to fix an
+> installation problem — install the new APK straight over the top, because
+> uninstalling deletes the app's data directory and there is no cloud copy to
+> restore from. And only install builds signed with the same key: an APK signed
+> with any other key cannot install over this one, and clearing that requires an
+> uninstall. **Settings → Export progress** writes a backup file first; **Import
+> progress** reads it back, including to and from the iOS build.
+
+---
+
 ## Table of Contents
 
+- [Download](#download)
 - [Screenshots](#screenshots)
 - [How It Works](#how-it-works)
 - [Why This Project Is Interesting](#why-this-project-is-interesting)
@@ -66,7 +116,7 @@ Android SDK on it. Nothing is ever built locally.
 - [Testing](#testing)
 - [Porting Notes](#porting-notes)
 - [Adding Vocabulary](#adding-vocabulary)
-- [Installing on a Device](#installing-on-a-device)
+- [Releasing a New Version](#releasing-a-new-version)
 - [Building Locally](#building-locally-optional)
 - [Current Scope and Limitations](#current-scope-and-limitations)
 - [License](#license)
@@ -361,7 +411,7 @@ tag matching v*
 release-build          (ubuntu, assembleRelease)
         |
         v
-signed .apk artifact    -> downloaded and installed with adb or sideloading
+signed .apk artifact    -> attached to a GitHub Release, installed by tapping
 ```
 
 | Job | Trigger | Purpose |
@@ -369,7 +419,7 @@ signed .apk artifact    -> downloaded and installed with adb or sideloading
 | `content-lint` | every push/PR | `validate_content.py --strict`; gates the build jobs so a bad JSON edit never costs a build minute |
 | `unit-tests` | every push/PR | `gradle testDebugUnitTest` — the only fast feedback on the practice engine |
 | `emulator-check` | every push/PR | Builds, verifies the bundled JSON and launcher icon are actually inside the APK, then screenshots every screen in light and dark |
-| `release-build` | tags matching `v*` | Restores the keystore from Actions secrets, runs `assembleRelease`, verifies the APK signature, and uploads an installable artifact |
+| `release-build` | tags matching `v*` | Restores the keystore from Actions secrets, runs `assembleRelease`, verifies the APK signature with `apksigner`, and uploads `TOEFLVocab-<tag>.apk` as an artifact for attaching to a Release |
 
 The screenshots come straight out of `emulator-check`. The app is relaunched
 once per screen with a `screenshot` intent extra, seeds deterministic progress
@@ -445,30 +495,35 @@ codebases genuinely differ, and why.
 
 ---
 
-## Installing on a Device
+## Releasing a New Version
 
-Regular pushes only run the emulator check. An installable build needs a version
-tag:
+For anyone installing the app, the [Download](#download) section above is the
+whole story. This section is for cutting a new build.
 
-```bash
-git tag v1.2.1
-```
-
-```bash
-git push origin v1.2.1
-```
-
-Download the signed APK artifact from the workflow run, then either:
+Regular pushes only run the content lint, the unit tests and the emulator check.
+A signed, installable APK requires a version tag:
 
 ```bash
-adb install -r TOEFLVocab-v1.2.1.apk
+git tag -a v1.2.1 -m "v1.2.1" && git push origin v1.2.1
 ```
 
-or copy it to the phone and open it with "install unknown apps" enabled for your
-file manager.
+That triggers the `release-build` job, which restores the keystore from Actions
+secrets, runs `assembleRelease`, verifies the signature with `apksigner`, and
+uploads `TOEFLVocab-<tag>.apk` as a workflow artifact. Publishing is a separate,
+deliberate step — download that artifact, then attach it to a GitHub Release:
 
-> Unlike the iOS build, nothing expires. Keep the signing keystore backed up:
-> every future update must be signed with the same key.
+```bash
+gh release create v1.2.1 --draft --notes-file RELEASE_NOTES.md TOEFLVocab-v1.2.1.apk
+```
+
+Check the draft renders, then publish it with
+`gh release edit v1.2.1 --draft=false`.
+
+> **Keep the signing keystore backed up.** Every future update must be signed
+> with the same key — losing it means no existing installation can ever be
+> upgraded in place, only uninstalled and reinstalled, which destroys the user's
+> progress. The keystore and its passwords live only in Actions secrets and are
+> never committed or uploaded as artifacts.
 
 ---
 
@@ -502,7 +557,7 @@ Current scope:
 
 - Offline, single-device vocabulary practice
 - Bundled word lists, English content, English/Persian UI
-- Sideloaded distribution via a CI artifact, not Google Play
+- Distributed as a signed APK from GitHub Releases, not Google Play
 
 Current limitations:
 

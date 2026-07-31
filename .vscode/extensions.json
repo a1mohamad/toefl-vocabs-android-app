@@ -1,0 +1,21 @@
+{
+  "recommendations": [
+    // Syntax colouring. A TextMate grammar only — no language server, no JVM,
+    // a few hundred KB. This is the one that makes .kt and .kts files coloured
+    // the instant they open, whether or not anything else is working.
+    "mathiasfrohlich.Kotlin",
+
+    // Code intelligence: completion, go-to-definition, diagnostics, quick-fixes.
+    // Official, from JetBrains, powered by the same engine as IntelliJ — but
+    // still alpha, and its Android Gradle Plugin support is explicitly
+    // experimental, so treat a failed project import as expected rather than as
+    // something you broke.
+    "JetBrains.kotlin-server",
+
+    // Run Gradle tasks from the sidebar instead of typing them.
+    "vscjava.vscode-gradle",
+
+    // Install, launch and debug the APK on a device or emulator.
+    "adelphes.android-dev-ext"
+  ]
+}

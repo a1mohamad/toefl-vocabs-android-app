@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palette.background, light appearance. Only used for the launch window. -->
+    <color name="window_background">#FFF5F4FA</color>
+    <color name="ic_launcher_background">#FF4F46E5</color>
+</resources>

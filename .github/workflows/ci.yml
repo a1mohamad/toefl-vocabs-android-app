@@ -1,0 +1,242 @@
+name: TOEFL Vocab CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']       # push a tag like v1.1, v1.2, ... to trigger a release APK build
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PACKAGE: io.github.a1mohamad.toeflvocab
+  GRADLE_VERSION: '8.9'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 0: content lint. Runs BEFORE anything that costs a build. Catches the
+  # most likely breakage — a hand-edited vocabs.json or a catalog.json that
+  # references a section that doesn't exist. Failing here costs seconds instead
+  # of a six-minute Gradle build plus an emulator boot.
+  # ---------------------------------------------------------------------------
+  content-lint:
+    name: Validate vocab JSON
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate content files
+        run: python Scripts/validate_content.py --strict
+
+  # ---------------------------------------------------------------------------
+  # Job 1: unit tests. The ONLY fast way to verify the practice engine (adaptive
+  # ordering, the 5-slot cycle rule, stats aggregation) given there is no local
+  # emulator. Kept in its own job so a test failure still lets the screenshot job
+  # produce a picture of the UI.
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    needs: content-lint
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # `gradle-version` here is what lets this repo work without committing the
+      # wrapper jar. `gradle wrapper` locally regenerates it for anyone who wants
+      # ./gradlew instead.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Test
+        run: gradle testDebugUnitTest --stacktrace
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+
+  # ---------------------------------------------------------------------------
+  # Job 2: build + screenshot. The everyday visual feedback loop. No signing
+  # beyond the automatic debug key.
+  # ---------------------------------------------------------------------------
+  emulator-check:
+    name: Build & screenshot in an emulator
+    runs-on: ubuntu-latest
+    needs: content-lint
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      # Without this the emulator falls back to software rendering and every
+      # screenshot step times out.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build the debug APK
+        run: gradle assembleDebug --stacktrace
+
+      # Guard: the app builds, launches and screenshots perfectly happily with an
+      # empty assets/ folder — it would just show "No vocabulary found", which
+      # reads like a UI bug rather than a packaging one. Fail loudly instead.
+      - name: Verify content and icon were packaged into the APK
+        run: |
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          echo "APK: $APK"
+          ls -lh "$APK"
+
+          for f in vocabs.json catalog.json; do
+            if ! unzip -l "$APK" | grep -q "assets/VocabData/$f"; then
+              echo "::error::$f is missing from the APK. Check app/src/main/assets/VocabData/."
+              exit 1
+            fi
+            echo "found assets/VocabData/$f"
+          done
+
+          # A missing launcher icon is invisible until the app is on a home
+          # screen, which on this project means a tag, a download and an install.
+          if ! unzip -l "$APK" | grep -q "ic_launcher"; then
+            echo "::error::No ic_launcher resources in the APK. Run Scripts/make_app_icon.py."
+            exit 1
+          fi
+          echo "found launcher icon resources:"
+          unzip -l "$APK" | grep "ic_launcher" | head -n 12
+
+      # Every screen, in both appearances. The app is relaunched once per screen
+      # with a `screenshot` intent extra that seeds deterministic progress and
+      # opens straight to that page — no UI automation to go stale, and the
+      # seeded data means Reports and the checklists are never photographed
+      # empty. See app/src/main/java/.../app/ScreenshotHarness.kt.
+      - name: Capture every screen
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -e
+            APK=app/build/outputs/apk/debug/app-debug.apk
+            SCREENS="library book section practice practice-revealed summary reports settings about"
+            mkdir -p screenshots
+
+            adb install -r "$APK"
+            adb shell settings put global window_animation_scale 0
+            adb shell settings put global transition_animation_scale 0
+            adb shell settings put global animator_duration_scale 0
+
+            for appearance in light dark; do
+              if [ "$appearance" = "dark" ]; then
+                adb shell cmd uimode night yes
+              else
+                adb shell cmd uimode night no
+              fi
+              sleep 2
+
+              for screen in $SCREENS; do
+                adb shell am force-stop $PACKAGE || true
+                adb shell am start -n $PACKAGE/.app.MainActivity -e screenshot "$screen" > /dev/null
+                sleep 4
+                adb exec-out screencap -p > "screenshots/${screen}-${appearance}.png"
+                echo "captured ${screen}-${appearance}"
+              done
+            done
+
+            COUNT=$(ls -1 screenshots | wc -l | tr -d ' ')
+            echo "captured $COUNT screenshots"
+            # A crash on launch still yields a screenshot — of the launcher — so
+            # a plausible file count is not proof, but a short count is proof of
+            # failure.
+            if [ "$COUNT" -lt 18 ]; then
+              echo "::error::expected 18 screenshots, got $COUNT"
+              exit 1
+            fi
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-screenshots
+          path: screenshots/
+
+  # ---------------------------------------------------------------------------
+  # Job 3: installable APK. Tags only (v1.1, v1.2, ...).
+  #
+  # Unsigned on purpose: signing would need a keystore in repository secrets, and
+  # this project deliberately keeps everything it needs in the open. The artifact
+  # installs with `adb install` or by sideloading with "install unknown apps"
+  # enabled — Android has no equivalent of the 7-day free-provisioning expiry the
+  # iOS build lives with.
+  # ---------------------------------------------------------------------------
+  release-build:
+    name: Build release APK
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: [content-lint, emulator-check]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Build unsigned release APK
+        run: gradle assembleRelease --stacktrace
+
+      - name: Rename the artifact
+        run: |
+          SRC=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          echo "Built: $SRC"
+          cp "$SRC" "TOEFLVocab-${{ github.ref_name }}-unsigned.apk"
+          ls -lh TOEFLVocab-*.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TOEFLVocab-unsigned-apk-${{ github.ref_name }}
+          path: TOEFLVocab-*.apk

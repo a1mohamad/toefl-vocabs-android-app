@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    progress.json and the settings blob are the only things worth restoring, and
+    both are small. Android 11 and below.
+-->
+<full-backup-content>
+    <include domain="file" path="progress.json" />
+    <include domain="sharedpref" path="settings.xml" />
+</full-backup-content>

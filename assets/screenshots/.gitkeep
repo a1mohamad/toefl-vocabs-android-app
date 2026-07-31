@@ -1,0 +1,10 @@
+Screenshots land here.
+
+CI captures every screen in light and dark on each push and uploads them as the
+`emulator-screenshots` artifact. Download that artifact from the workflow run,
+drop the images you want to keep into this folder, and reference them from
+README.md — the table under "Screenshots" lists the filenames CI produces.
+
+They are kept out of CI's own commit deliberately: a workflow that pushes
+regenerated binaries back into the repository turns every UI tweak into a diff
+nobody reads.

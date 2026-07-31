@@ -142,6 +142,11 @@ jobs:
       # opens straight to that page — no UI automation to go stale, and the
       # seeded data means Reports and the checklists are never photographed
       # empty. See app/src/main/java/.../app/ScreenshotHarness.kt.
+      #
+      # The logic lives in a script file rather than inline because this action
+      # runs the `script` input one line per `sh -c` invocation: a variable
+      # assigned on one line is gone by the next, and a multi-line `for` loop is
+      # a syntax error in its first line. So this stays a single command.
       - name: Capture every screen
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -151,43 +156,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            set -e
-            APK=app/build/outputs/apk/debug/app-debug.apk
-            SCREENS="library book section practice practice-revealed summary reports settings about"
-            mkdir -p screenshots
-
-            adb install -r "$APK"
-            adb shell settings put global window_animation_scale 0
-            adb shell settings put global transition_animation_scale 0
-            adb shell settings put global animator_duration_scale 0
-
-            for appearance in light dark; do
-              if [ "$appearance" = "dark" ]; then
-                adb shell cmd uimode night yes
-              else
-                adb shell cmd uimode night no
-              fi
-              sleep 2
-
-              for screen in $SCREENS; do
-                adb shell am force-stop $PACKAGE || true
-                adb shell am start -n $PACKAGE/.app.MainActivity -e screenshot "$screen" > /dev/null
-                sleep 4
-                adb exec-out screencap -p > "screenshots/${screen}-${appearance}.png"
-                echo "captured ${screen}-${appearance}"
-              done
-            done
-
-            COUNT=$(ls -1 screenshots | wc -l | tr -d ' ')
-            echo "captured $COUNT screenshots"
-            # A crash on launch still yields a screenshot — of the launcher — so
-            # a plausible file count is not proof, but a short count is proof of
-            # failure.
-            if [ "$COUNT" -lt 18 ]; then
-              echo "::error::expected 18 screenshots, got $COUNT"
-              exit 1
-            fi
+          script: bash Scripts/capture_screenshots.sh
 
       - name: Upload screenshots
         if: always()

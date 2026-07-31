@@ -132,8 +132,8 @@ The build constraints shaped almost every technical decision in the repository:
   GitHub Actions runner.
 - **No Compose previews.** No `@Preview` panel, no Live Edit, no layout
   inspector. A change is only verified once it reaches CI.
-- **No Play Console, no keystore.** The release job produces an *unsigned* APK
-  on purpose, so nothing in this repository has to be secret.
+- **No Play Console.** Tagged releases are signed in GitHub Actions using a
+  keystore and passwords stored as repository secrets, never in source control.
 - **The repository must stay public.** That is what keeps GitHub Actions minutes
   free.
 - **Almost no dependencies.** Compose, Material icons and
@@ -361,7 +361,7 @@ tag matching v*
 release-build          (ubuntu, assembleRelease)
         |
         v
-unsigned .apk artifact  -> downloaded and installed with adb or sideloading
+signed .apk artifact    -> downloaded and installed with adb or sideloading
 ```
 
 | Job | Trigger | Purpose |
@@ -369,7 +369,7 @@ unsigned .apk artifact  -> downloaded and installed with adb or sideloading
 | `content-lint` | every push/PR | `validate_content.py --strict`; gates the build jobs so a bad JSON edit never costs a build minute |
 | `unit-tests` | every push/PR | `gradle testDebugUnitTest` — the only fast feedback on the practice engine |
 | `emulator-check` | every push/PR | Builds, verifies the bundled JSON and launcher icon are actually inside the APK, then screenshots every screen in light and dark |
-| `release-build` | tags matching `v*` | `assembleRelease`, packaged as an unsigned APK artifact |
+| `release-build` | tags matching `v*` | Restores the keystore from Actions secrets, runs `assembleRelease`, verifies the APK signature, and uploads an installable artifact |
 
 The screenshots come straight out of `emulator-check`. The app is relaunched
 once per screen with a `screenshot` intent extra, seeds deterministic progress
@@ -423,7 +423,7 @@ codebases genuinely differ, and why.
 | Backup files | `fileExporter` / `fileImporter` | Storage Access Framework | Same two-step flow — decode and validate *before* prompting to overwrite. |
 | Reduce motion | `accessibilityReduceMotion` | Animator duration scale of 0 | Android has no single switch; the duration scale is the signal apps are expected to read. |
 | Debug harness | `#if DEBUG`, launch argument | `if (BuildConfig.DEBUG)`, intent extra | `am start` passes extras, not argv. R8 folds the constant and strips the branch from release. |
-| Distribution | Sideloadly, expires weekly | Unsigned APK, no expiry | Android has no equivalent of the free-provisioning 7-day limit. |
+| Distribution | Sideloadly, expires weekly | Signed APK, no expiry | Android has no equivalent of the free-provisioning 7-day limit. |
 
 ---
 
@@ -451,24 +451,24 @@ Regular pushes only run the emulator check. An installable build needs a version
 tag:
 
 ```bash
-git tag v1.2
+git tag v1.2.1
 ```
 
 ```bash
-git push origin v1.2
+git push origin v1.2.1
 ```
 
-Download the unsigned APK artifact from the workflow run, then either:
+Download the signed APK artifact from the workflow run, then either:
 
 ```bash
-adb install -r TOEFLVocab-v1.2-unsigned.apk
+adb install -r TOEFLVocab-v1.2.1.apk
 ```
 
 or copy it to the phone and open it with "install unknown apps" enabled for your
 file manager.
 
-> Unlike the iOS build, nothing expires. The APK stays installed until you
-> remove it, and re-signing is never needed.
+> Unlike the iOS build, nothing expires. Keep the signing keystore backed up:
+> every future update must be signed with the same key.
 
 ---
 
@@ -509,8 +509,8 @@ Current limitations:
 - No push notifications and no cloud sync — the app makes no network calls at
   all, by design
 - No local build or emulator; every change is verified through CI
-- The release APK is unsigned, so Play Store distribution would need a keystore
-  this repository deliberately does not hold
+- The release APK is signed for direct installation, but Play Store
+  distribution is not configured
 - Progress does not sync across devices, though it can be exported and imported
   as a file — including to and from the iOS build
 

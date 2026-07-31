@@ -21,8 +21,8 @@ local.properties
 *.ap_
 *.dex
 
-## Signing material. Nothing in this repository is signed with a real key, and
-## nothing ever should be — the release job produces an unsigned APK on purpose.
+## Signing material. Release signing is configured through GitHub Actions
+## secrets; private keys and local signing properties must never be committed.
 *.jks
 *.keystore
 keystore.properties

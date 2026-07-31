@@ -28,12 +28,36 @@ local.properties
 keystore.properties
 
 ## Android Studio / IntelliJ
+#
+# Ignored wholesale. Nothing in here is needed to build the project, and the
+# files are rewritten constantly with machine-local paths.
 .idea/
 *.iml
 *.ipr
 *.iws
 .navigation/
 .cxx/
+
+## VS Code
+#
+# The opposite call to .idea/, because two of these files are project
+# configuration rather than personal preference:
+#
+#   settings.json    associates *.kts with Kotlin. Without it every Gradle build
+#                    file opens as Plain Text — a real, reproducible problem that
+#                    a fresh clone would otherwise have to rediscover.
+#   extensions.json  names the four extensions this project needs, so a new
+#                    clone is not left guessing which of the dozen Kotlin
+#                    extensions on the marketplace is the right one.
+#
+# Everything else VS Code writes into this folder is per-user or per-machine, so
+# the folder is ignored and the shared files are added back.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/*.code-snippets
 
 ## Kotlin
 .kotlin/

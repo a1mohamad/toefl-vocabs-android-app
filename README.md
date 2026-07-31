@@ -29,6 +29,10 @@
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Amir%20Mohammad%20Askari-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/amirmohammad-askari/)
 [![Kaggle](https://img.shields.io/badge/Kaggle-amirmohamadaskari-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/amirmohamadaskari)
 
+<br>
+
+<img src="assets/screenshots/practice-dark.png" alt="Practice screen showing a word, pronunciation control and the five-box checklist" width="300">
+
 </div>
 
 **TOEFL Vocab** is an offline vocabulary trainer built on two classic word
@@ -71,22 +75,35 @@ Android SDK on it. Nothing is ever built locally.
 
 ## Screenshots
 
-Every screen is captured automatically by CI on each push, in both light and
-dark, and uploaded as the `emulator-screenshots` artifact — see
-[CI/CD Pipeline](#cicd-pipeline). Drop the ones you want to keep into
-`assets/screenshots/` and reference them here.
+Every screen below is captured automatically by CI on each push — see
+[CI/CD Pipeline](#cicd-pipeline). Nothing here was taken by hand.
 
-| Screen | Captured as |
-|---|---|
-| Library | `library-light.png`, `library-dark.png` |
-| Book | `book-light.png`, `book-dark.png` |
-| Section | `section-light.png`, `section-dark.png` |
-| Practice | `practice-light.png`, `practice-dark.png` |
-| Meaning revealed | `practice-revealed-light.png`, `practice-revealed-dark.png` |
-| Section complete | `summary-light.png`, `summary-dark.png` |
-| Reports | `reports-light.png`, `reports-dark.png` |
-| Settings | `settings-light.png`, `settings-dark.png` |
-| About | `about-light.png`, `about-dark.png` |
+| Library | Section |
+|:---:|:---:|
+| <img src="assets/screenshots/library-dark.png" alt="Library screen listing both vocabulary books with progress meters" width="270"> | <img src="assets/screenshots/section-dark.png" alt="Section screen with Main and Extra list pickers and a preview of the first queued words" width="270"> |
+| Both books, with progress at a glance | Main / Extra picker, with the adaptive queue previewed |
+
+| Meaning Revealed | Section Complete |
+|:---:|:---:|
+| <img src="assets/screenshots/practice-revealed-dark.png" alt="Practice screen after answering, showing the revealed definition" width="270"> | <img src="assets/screenshots/summary-dark.png" alt="Session summary showing accuracy ring and next-step options" width="270"> |
+| Self-grade, then the definition appears | Accuracy, cycles completed, and where to go next |
+
+### Light and Dark
+
+Both appearances are first-class and verified on every CI run:
+
+| Light | Dark |
+|:---:|:---:|
+| <img src="assets/screenshots/reports-light.png" alt="Reports screen in light appearance" width="290"> | <img src="assets/screenshots/reports-dark.png" alt="Reports screen in dark appearance" width="290"> |
+
+The run captures all nine screens in both appearances — eighteen images — and
+uploads the full set as the `emulator-screenshots` artifact. The seven committed
+here are the ones this page shows; to refresh them, download the artifact and
+run:
+
+```bash
+python Scripts/prepare_screenshots.py path/to/downloaded/artifact
+```
 
 ---
 

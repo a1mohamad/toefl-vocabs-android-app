@@ -50,7 +50,11 @@ app/lint-baseline.xml
 
 ## Emulator and adb noise
 *.hprof
-screenshots/
+
+## Screenshots pulled off an emulator land in a folder of this name at the repo
+## root. Anchored with a leading slash so it does not also swallow
+## assets/screenshots/, which is the curated set the README points at.
+/screenshots/
 
 ## OS
 .DS_Store

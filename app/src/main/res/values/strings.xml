@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The only string that lives in a resource file is the launcher label,
+        because Android reads it from the manifest before any Kotlin runs.
+        Everything the UI says comes from core/localization/Strings.kt, for the
+        same reason the iOS build keeps a Swift table instead of .strings files:
+        a mis-scoped resource qualifier only shows up as a raw key after a full
+        CI round trip, and there is no local emulator here to catch it sooner.
+    -->
+    <string name="app_name">TOEFL Vocab</string>
+</resources>

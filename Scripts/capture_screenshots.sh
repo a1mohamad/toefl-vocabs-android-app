@@ -28,8 +28,18 @@ OUT_DIR="${OUT_DIR:-screenshots}"
 SCREENS="library book section practice practice-revealed summary reports settings about"
 APPEARANCES="light dark"
 
-# Long enough for a cold start plus the harness's own 500 ms navigation delay.
+# Time to wait after the activity reports itself displayed, covering the
+# harness's own 500 ms navigation delay plus first-frame composition.
 SETTLE_SECONDS="${SETTLE_SECONDS:-5}"
+
+# A capture of the launch window — the themed background with nothing drawn on
+# it yet — compresses to about 21 KB at this resolution, where every real screen
+# lands above 100 KB. Anything under this threshold is treated as "caught the
+# app too early" and retried once.
+#
+# This check exists because a blank frame is exactly what the file count cannot
+# catch: the file is there, it is a valid PNG, and it is useless.
+MIN_BYTES="${MIN_BYTES:-45000}"
 
 echo "Package : $PACKAGE"
 echo "APK     : $APK"
@@ -60,19 +70,36 @@ for appearance in $APPEARANCES; do
     expected=$((expected + 1))
     target="$OUT_DIR/${screen}-${appearance}.png"
 
-    adb shell am force-stop "$PACKAGE" || true
-    adb shell am start -n "$PACKAGE/.app.MainActivity" -e screenshot "$screen" > /dev/null
-    sleep "$SETTLE_SECONDS"
+    capture_once() {
+      adb shell am force-stop "$PACKAGE" || true
+      # `-W` blocks until the activity reports itself displayed, which is what
+      # makes this robust against a slow cold start rather than hoping a fixed
+      # sleep is long enough.
+      adb shell am start -W -n "$PACKAGE/.app.MainActivity" \
+        -e screenshot "$screen" > /dev/null
+      sleep "$SETTLE_SECONDS"
+      # `exec-out` rather than `shell` so the PNG is not mangled on the way out
+      # of the device.
+      adb exec-out screencap -p > "$target"
+    }
 
-    # `exec-out` rather than `shell` so the PNG is not mangled by CRLF
-    # translation on the way out of the device.
-    adb exec-out screencap -p > "$target"
+    capture_once
+    size=$(wc -c < "$target")
 
-    if [ ! -s "$target" ]; then
-      echo "::error::$target is empty — screencap produced nothing"
+    if [ "$size" -lt "$MIN_BYTES" ]; then
+      echo "  ${screen}-${appearance} looked blank at ${size} bytes, retrying"
+      sleep 3
+      capture_once
+      size=$(wc -c < "$target")
+    fi
+
+    if [ "$size" -lt "$MIN_BYTES" ]; then
+      echo "::error::${screen}-${appearance} is still blank at ${size} bytes." \
+           "The app did not draw — check for a crash on this screen."
       exit 1
     fi
-    echo "captured ${screen}-${appearance} ($(wc -c < "$target") bytes)"
+
+    echo "captured ${screen}-${appearance} (${size} bytes)"
   done
 done
 

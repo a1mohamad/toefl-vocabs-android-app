@@ -21,7 +21,8 @@
 
 [![Dataset](https://img.shields.io/badge/Dataset-Bundled%20JSON-1A73E8?logo=json&logoColor=white)](app/src/main/assets/VocabData/vocabs.json)
 [![Design Notes](https://img.shields.io/badge/Design%20Notes-Project%20Plan-6E56CF?logo=markdown&logoColor=white)](docs/PROJECT_PLAN.md)
-![Research Lab](https://img.shields.io/badge/Research%20Lab-Project%20Page-222222?logo=githubpages&logoColor=white)
+[![Research Lab](https://img.shields.io/badge/Research%20Lab-Project%20Page-222222?logo=githubpages&logoColor=white)](https://a1mohamad.github.io/research/toefl-vocabs/index.html)
+[![App Page](https://img.shields.io/badge/App%20Page-Try%20It%20Online-0A84FF?logo=googlechrome&logoColor=white)](https://a1mohamad.github.io/apps/toefl-vocab/index.html)
 [![iOS Original](https://img.shields.io/badge/iOS%20Original-SwiftUI-F05138?logo=swift&logoColor=white)](https://github.com/a1mohamad/toefl-vocabs-ios-app)
 
 **Contact and Profiles**

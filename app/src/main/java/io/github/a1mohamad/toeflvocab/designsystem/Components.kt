@@ -37,11 +37,17 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.a1mohamad.toeflvocab.core.content.TipMarkup
 import io.github.a1mohamad.toeflvocab.core.localization.LocalStrings
 import io.github.a1mohamad.toeflvocab.core.localization.StringKey
 import io.github.a1mohamad.toeflvocab.core.models.AppSymbol
@@ -548,43 +554,143 @@ fun PronunciationControl(
     }
 }
 
-// MARK: - Usage tip
+// MARK: - Meanings
 
 /**
- * The grammar note that some words carry after the `---` marker in the source
- * data — "followed by in", "usually comes before the noun it describes".
+ * The revealed definition.
+ *
+ * The source data packs every sense of a word onto one `;`-separated line
+ * ("keep; keep up; carry on; uphold; support"), which arrives as a single grey
+ * paragraph where no individual meaning stands out. So one meaning stays a
+ * centred line, exactly as before, and two or more become a numbered list — the
+ * list is what tells the learner at a glance that this word has five senses, not
+ * one long one.
+ *
+ * Left-aligned inside a centred block on purpose: numbers that do not share a
+ * left edge are much harder to scan down.
+ */
+@Composable
+fun MeaningListView(meanings: List<String>, modifier: Modifier = Modifier) {
+    if (meanings.size <= 1) {
+        Text(
+            text = meanings.firstOrNull() ?: "",
+            style = AppFont.definition,
+            color = Palette.textPrimary,
+            textAlign = TextAlign.Center,
+            modifier = modifier,
+        )
+        return
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = modifier,
+    ) {
+        meanings.forEachIndexed { index, meaning ->
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text(
+                    text = "${index + 1}.",
+                    style = AppFont.definition,
+                    color = Palette.textTertiary,
+                )
+                Text(
+                    text = meaning,
+                    style = AppFont.definition,
+                    color = Palette.textPrimary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+// MARK: - Usage tips
+
+/**
+ * The grammar notes that some words carry after the `---` markers in the source
+ * data — "followed by 'in'", "usually comes before the noun it describes".
  *
  * Deliberately styled as an aside rather than as more definition text: it is
  * advice about *using* the word, and a learner who reads it as part of the
  * meaning is memorising the wrong thing. The lightbulb and the warm tint are the
- * conventional "tip" pairing, and the label repeats what the icon says so the
+ * conventional "tip" pairing, and the heading repeats what the icon says so the
  * emoji is never the only cue.
+ *
+ * Several words carry two independent notes, so every note gets its own
+ * lightbulb and its own line inside one card — one shared heading, because
+ * repeating "TIP" three times is noise rather than structure.
+ *
+ * Inside each note, the `'quoted'` words are coloured: those quotes are the
+ * data's way of marking the word the note is really about, and a note with three
+ * of them gets three different colours so they do not merge into one long
+ * emphasis. See [TipMarkup] and [Palette.tipHighlights].
  */
 @Composable
-fun UsageTipView(tip: String, modifier: Modifier = Modifier) {
+fun UsageTipsView(tips: List<String>, modifier: Modifier = Modifier) {
+    if (tips.isEmpty()) return
+
     val strings = LocalStrings.current
     val shape = RoundedCornerShape(Metrics.controlRadius)
-    val label = "${strings[StringKey.PracticeTip]}: $tip"
+    val highlights = Palette.tipHighlights
+    val plainColor = Palette.textSecondary
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .background(Palette.warningSoft, shape)
             .border(1.dp, Palette.warning.copy(alpha = 0.28f), shape)
-            .padding(horizontal = 13.dp, vertical = 11.dp)
-            .clearAndSetSemantics { contentDescription = label },
+            .padding(horizontal = 13.dp, vertical = 11.dp),
     ) {
-        Text("💡", style = AppFont.body.copy(fontSize = 18.sp))
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                text = strings[StringKey.PracticeTip].uppercase(),
-                style = AppFont.badge.copy(letterSpacing = 0.6.sp),
-                color = Palette.warning,
-            )
-            Text(tip, style = AppFont.body, color = Palette.textSecondary)
+        Text(
+            text = strings[
+                if (tips.size > 1) StringKey.PracticeTips else StringKey.PracticeTip
+            ].uppercase(),
+            style = AppFont.badge.copy(letterSpacing = 0.6.sp),
+            color = Palette.warning,
+        )
+
+        tips.forEachIndexed { index, tip ->
+            val label = if (tips.size > 1) {
+                "${strings.format(StringKey.PracticeTipPosition, index + 1, tips.size)}: " +
+                    TipMarkup.plainText(tip)
+            } else {
+                "${strings[StringKey.PracticeTip]}: ${TipMarkup.plainText(tip)}"
+            }
+            val highlighted = highlightedTip(tip, highlights, plainColor)
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                modifier = Modifier.clearAndSetSemantics { contentDescription = label },
+            ) {
+                Text("💡", style = AppFont.body.copy(fontSize = 16.sp))
+                Text(text = highlighted, style = AppFont.body, modifier = Modifier.weight(1f))
+            }
         }
+    }
+}
+
+/**
+ * The tip as coloured text. Highlights are bold as well as coloured, so a
+ * colourblind reader still sees which word is marked.
+ */
+private fun highlightedTip(
+    tip: String,
+    highlights: List<Color>,
+    plain: Color,
+): AnnotatedString = buildAnnotatedString {
+    for (segment in TipMarkup.segments(tip)) {
+        val index = segment.highlightIndex
+        val style = if (index != null && highlights.isNotEmpty()) {
+            SpanStyle(
+                color = highlights[index % highlights.size],
+                fontWeight = FontWeight.Bold,
+            )
+        } else {
+            SpanStyle(color = plain)
+        }
+        withStyle(style) { append(segment.text) }
     }
 }
 

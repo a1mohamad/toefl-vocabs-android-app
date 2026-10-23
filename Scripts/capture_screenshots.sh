@@ -25,7 +25,7 @@ PACKAGE="${PACKAGE:-io.github.a1mohamad.toeflvocab}"
 APK="${APK:-app/build/outputs/apk/debug/app-debug.apk}"
 OUT_DIR="${OUT_DIR:-screenshots}"
 
-SCREENS="library book section practice practice-revealed summary reports settings about"
+SCREENS="library book section practice practice-revealed practice-tip summary reports settings about"
 APPEARANCES="light dark"
 
 # Time to wait after the activity reports itself displayed, covering the

@@ -71,6 +71,31 @@ object Palette {
     val successSoft: Color @Composable @ReadOnlyComposable get() = dynamic(0xE3F5EC, 0x14312A)
     val dangerSoft: Color @Composable @ReadOnlyComposable get() = dynamic(0xFCE9EC, 0x36181F)
     val warningSoft: Color @Composable @ReadOnlyComposable get() = dynamic(0xFDF2E0, 0x342612)
+
+    /**
+     * Inline colours for the `'quoted'` words inside a usage tip.
+     *
+     * The quotes in the source data mark the word the tip is really about —
+     * "followed by 'of'", "cast is 'singular'" — and a tip can carry up to six
+     * of them. One colour for all would make a multi-part tip read as a single
+     * long emphasis, so highlights cycle through this list in the order they
+     * appear.
+     *
+     * Each entry is dark enough to read on [warningSoft] in light mode and
+     * light enough in dark mode. The highlight is always paired with a bolder
+     * weight, so the colour is never the only thing marking the word, and
+     * [success] / [danger] are deliberately absent — they mean right and wrong
+     * everywhere else in the app.
+     */
+    val tipHighlights: List<Color>
+        @Composable @ReadOnlyComposable get() = listOf(
+            dynamic(0x4338CA, 0xA5B4FC),   // indigo
+            dynamic(0x0F766E, 0x5EEAD4),   // teal
+            dynamic(0xBE123C, 0xFDA4AF),   // rose
+            dynamic(0x7E22CE, 0xD8B4FE),   // violet
+            dynamic(0x166534, 0x86EFAC),   // green
+            dynamic(0x1D4ED8, 0x93C5FD),   // blue
+        )
 }
 
 // MARK: - Book accents

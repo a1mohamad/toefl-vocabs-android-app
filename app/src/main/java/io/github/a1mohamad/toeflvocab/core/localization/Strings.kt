@@ -91,6 +91,7 @@ enum class StringKey {
     PracticeCycleComplete, PracticeQuitTitle, PracticeQuitMessage,
     PracticeTapToHear, PracticeNewWord, PracticeCorrectTally, PracticeWrongTally,
     PracticeSpeakLabel, PracticeChecklistLabel, PracticeTip,
+    PracticeTips, PracticeTipPosition, PracticeMeanings,
 
     // Summary
     SummaryTitle, SummaryAccuracy, SummaryAnswered, SummaryNextSection,
@@ -207,6 +208,7 @@ class Strings(language: AppLanguage) {
             StringKey.PracticeKnewIt to "I knew it",
             StringKey.PracticeDidntKnow to "Didn't know",
             StringKey.PracticeMeaning to "Meaning",
+            StringKey.PracticeMeanings to "Meanings",
             StringKey.PracticeNextWord to "Next word",
             StringKey.PracticeFinish to "Finish",
             StringKey.PracticeProgress to "%d of %d",
@@ -222,6 +224,8 @@ class Strings(language: AppLanguage) {
             StringKey.PracticeSpeakLabel to "Pronounce %s",
             StringKey.PracticeChecklistLabel to "%d of %d answered, %d correct",
             StringKey.PracticeTip to "Tip",
+            StringKey.PracticeTips to "Tips",
+            StringKey.PracticeTipPosition to "Tip %d of %d",
 
             StringKey.SummaryTitle to "Section complete",
             StringKey.SummaryAccuracy to "Accuracy",
@@ -350,6 +354,7 @@ class Strings(language: AppLanguage) {
             StringKey.PracticeKnewIt to "بلد بودم",
             StringKey.PracticeDidntKnow to "بلد نبودم",
             StringKey.PracticeMeaning to "معنی",
+            StringKey.PracticeMeanings to "معنی‌ها",
             StringKey.PracticeNextWord to "واژه بعدی",
             StringKey.PracticeFinish to "پایان",
             StringKey.PracticeProgress to "%d از %d",
@@ -365,6 +370,8 @@ class Strings(language: AppLanguage) {
             StringKey.PracticeSpeakLabel to "تلفظ %s",
             StringKey.PracticeChecklistLabel to "%d از %d پاسخ، %d درست",
             StringKey.PracticeTip to "نکته",
+            StringKey.PracticeTips to "نکته‌ها",
+            StringKey.PracticeTipPosition to "نکته %d از %d",
 
             StringKey.SummaryTitle to "بخش کامل شد",
             StringKey.SummaryAccuracy to "دقت",

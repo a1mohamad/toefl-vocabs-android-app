@@ -4,6 +4,7 @@ import android.content.Intent
 import io.github.a1mohamad.toeflvocab.core.models.PracticeMode
 import io.github.a1mohamad.toeflvocab.core.models.VocabCatalog
 import io.github.a1mohamad.toeflvocab.core.models.VocabCategory
+import io.github.a1mohamad.toeflvocab.core.models.VocabItem
 import io.github.a1mohamad.toeflvocab.core.persistence.ProgressStore
 import io.github.a1mohamad.toeflvocab.features.practice.PracticeViewModel
 import io.github.a1mohamad.toeflvocab.navigation.PracticeConfiguration
@@ -106,6 +107,20 @@ object ScreenshotHarness {
         val book = catalog.books.firstOrNull() ?: return
         val section = book.sections.firstOrNull() ?: return
 
+        // The tip card is only worth photographing on a word that actually has
+        // tips, which the first section of the first book does not.
+        if (screen == "practice-tip") {
+            val exemplar = tipExemplar(catalog) ?: return
+            router.startPractice(
+                PracticeConfiguration.section(
+                    bookID = exemplar.bookID,
+                    sectionID = exemplar.sectionID,
+                    category = exemplar.category,
+                )
+            )
+            return
+        }
+
         when (screen) {
             "book" -> router.studyPath = listOf(Route.BookRoute(book.id))
 
@@ -132,12 +147,49 @@ object ScreenshotHarness {
     }
 
     /**
-     * Drives a live session far enough to photograph the revealed and summary
-     * states. Called from the practice screen, which owns the view model.
+     * The first word in the library carrying more than one usage tip, falling
+     * back to any word with one. Found by searching rather than hardcoded, so
+     * reordering the content cannot leave this pointing at a word with nothing
+     * to show.
+     */
+    private fun tipExemplar(catalog: VocabCatalog): VocabItem? =
+        catalog.allItems.firstOrNull { it.usageTips.size > 1 }
+            ?: catalog.allItems.firstOrNull { it.usageTips.isNotEmpty() }
+
+    /**
+     * Drives a live session far enough to photograph the revealed, tip and
+     * summary states. Called from the practice screen, which owns the view model.
      */
     fun advance(viewModel: PracticeViewModel) {
         when (requestedScreen) {
             "practice-revealed" -> viewModel.answer(correct = false)
+
+            "practice-tip" -> {
+                // The session opens on whichever word the adaptive queue ranks
+                // first, which is not necessarily the one with the tips, so step
+                // forward until it comes up and then reveal it.
+                val target = (
+                    viewModel.queue.firstOrNull { it.usageTips.size > 1 }
+                        ?: viewModel.queue.firstOrNull { it.usageTips.isNotEmpty() }
+                    )?.term
+                if (target == null) {
+                    viewModel.answer(correct = true)
+                    return
+                }
+                var steps = 0
+                while (viewModel.phase != PracticeViewModel.Phase.Finished && steps < 500) {
+                    steps += 1
+                    if (viewModel.currentItem?.term == target) {
+                        if (viewModel.revealedAnswer == null) viewModel.answer(correct = true)
+                        return
+                    }
+                    if (viewModel.revealedAnswer == null) {
+                        viewModel.answer(correct = true)
+                    } else {
+                        viewModel.advance()
+                    }
+                }
+            }
 
             "summary" -> {
                 // Bounded rather than `while (true)`: a logic slip here would

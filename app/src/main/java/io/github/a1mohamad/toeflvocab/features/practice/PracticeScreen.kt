@@ -60,11 +60,12 @@ import io.github.a1mohamad.toeflvocab.designsystem.AppFont
 import io.github.a1mohamad.toeflvocab.designsystem.ChecklistView
 import io.github.a1mohamad.toeflvocab.designsystem.Chip
 import io.github.a1mohamad.toeflvocab.designsystem.MeterBar
+import io.github.a1mohamad.toeflvocab.designsystem.MeaningListView
 import io.github.a1mohamad.toeflvocab.designsystem.Metrics
 import io.github.a1mohamad.toeflvocab.designsystem.Palette
 import io.github.a1mohamad.toeflvocab.designsystem.PrimaryButton
 import io.github.a1mohamad.toeflvocab.designsystem.PronunciationControl
-import io.github.a1mohamad.toeflvocab.designsystem.UsageTipView
+import io.github.a1mohamad.toeflvocab.designsystem.UsageTipsView
 import io.github.a1mohamad.toeflvocab.designsystem.gradient
 import io.github.a1mohamad.toeflvocab.designsystem.vector
 import io.github.a1mohamad.toeflvocab.navigation.PracticeConfiguration
@@ -457,20 +458,21 @@ private fun MeaningBlock(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                val meanings = item.meanings
                 Text(
-                    text = strings[StringKey.PracticeMeaning].uppercase(),
+                    // "Meaning" for one sense, "Meanings" for a word the book
+                    // gives several.
+                    text = strings[
+                        if (meanings.size > 1) StringKey.PracticeMeanings
+                        else StringKey.PracticeMeaning
+                    ].uppercase(),
                     style = AppFont.badge.copy(letterSpacing = 0.6.sp),
                     color = Palette.textTertiary,
                 )
-                Text(
-                    text = item.definition,
-                    style = AppFont.definition,
-                    color = Palette.textPrimary,
-                    textAlign = TextAlign.Center,
-                )
+                MeaningListView(meanings = meanings)
             }
 
-            item.usageTip?.let { UsageTipView(tip = it) }
+            UsageTipsView(tips = item.usageTips)
         }
     }
 }

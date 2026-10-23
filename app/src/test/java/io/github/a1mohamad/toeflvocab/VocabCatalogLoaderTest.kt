@@ -1,10 +1,12 @@
 package io.github.a1mohamad.toeflvocab
 
 import io.github.a1mohamad.toeflvocab.core.content.ContentError
+import io.github.a1mohamad.toeflvocab.core.content.TipMarkup
 import io.github.a1mohamad.toeflvocab.core.content.VocabCatalogLoader
 import io.github.a1mohamad.toeflvocab.core.models.BookTheme
 import io.github.a1mohamad.toeflvocab.core.models.SectionKind
 import io.github.a1mohamad.toeflvocab.core.models.VocabCategory
+import io.github.a1mohamad.toeflvocab.core.models.VocabItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -270,41 +272,104 @@ class VocabCatalogLoaderTest {
             "naturally characteristic",
             items[0].definition,
         )
-        assertEquals("followed by in", items[0].usageTip)
-        assertNull("A plain definition must not grow an empty tip", items[1].usageTip)
+        assertEquals(listOf("followed by in"), items[0].usageTips)
+        assertTrue("A plain definition must not grow an empty tip", items[1].usageTips.isEmpty())
     }
 
     @Test
     fun `splitting usage tips`() {
         assertEquals(
             "a strong influence",
-            VocabCatalogLoader.splitUsageTip("a strong influence --- followed by on or of").definition,
+            VocabCatalogLoader.splitDefinition("a strong influence --- followed by on or of").definition,
         )
         assertEquals(
-            "followed by on or of",
-            VocabCatalogLoader.splitUsageTip("a strong influence --- followed by on or of").usageTip,
+            listOf("followed by on or of"),
+            VocabCatalogLoader.splitDefinition("a strong influence --- followed by on or of").usageTips,
         )
 
         // No marker at all — the whole string is the meaning.
-        val plain = VocabCatalogLoader.splitUsageTip("  a dead body  ")
+        val plain = VocabCatalogLoader.splitDefinition("  a dead body  ")
         assertEquals("a dead body", plain.definition)
-        assertNull(plain.usageTip)
+        assertTrue(plain.usageTips.isEmpty())
 
-        // A second marker belongs to the note, not to a third field.
-        val doubled = VocabCatalogLoader.splitUsageTip("meaning --- first --- second")
+        // Each marker starts a new note. Several words in the 400 list carry two
+        // independent pieces of advice, and joining them would hide that.
+        val doubled = VocabCatalogLoader.splitDefinition("meaning --- first --- second")
         assertEquals("meaning", doubled.definition)
-        assertEquals("first --- second", doubled.usageTip)
+        assertEquals(listOf("first", "second"), doubled.usageTips)
+
+        // An empty stretch between two markers is dropped rather than becoming a
+        // blank tip row.
+        val hollow = VocabCatalogLoader.splitDefinition("meaning --- --- second")
+        assertEquals(listOf("second"), hollow.usageTips)
 
         // Nothing before the marker: keep the row readable rather than blanking
         // the meaning and getting the whole word skipped on load.
-        val headless = VocabCatalogLoader.splitUsageTip("--- followed by to")
+        val headless = VocabCatalogLoader.splitDefinition("--- followed by to")
         assertEquals("--- followed by to", headless.definition)
-        assertNull(headless.usageTip)
+        assertTrue(headless.usageTips.isEmpty())
 
         // Nothing after it either.
-        val empty = VocabCatalogLoader.splitUsageTip("a dead body ---")
+        val empty = VocabCatalogLoader.splitDefinition("a dead body ---")
         assertEquals("a dead body", empty.definition)
-        assertNull(empty.usageTip)
+        assertTrue(empty.usageTips.isEmpty())
+    }
+
+    // MARK: Meanings and tip markup
+
+    @Test
+    fun `definitions split into numbered meanings`() {
+        // The source data writes every sense of a word on one `;`-separated
+        // line; the practice screen numbers them, so the split has to be here.
+        assertEquals(
+            listOf("keep", "keep up", "carry on", "uphold"),
+            VocabItem.splitMeanings("keep; keep up; carry on; uphold"),
+        )
+
+        // One meaning stays one meaning — the screen keeps it as a centred line
+        // rather than a list of one.
+        assertEquals(listOf("a dead body"), VocabItem.splitMeanings("a dead body"))
+
+        // A trailing separator must not produce an empty numbered row.
+        assertEquals(listOf("empty", "not filled"), VocabItem.splitMeanings("empty; not filled;"))
+
+        // And a definition of nothing but separators keeps its text, because an
+        // empty list would leave the practice screen with no answer on it.
+        assertEquals(listOf(";;"), VocabItem.splitMeanings(";;"))
+    }
+
+    @Test
+    fun `tip markup finds the quoted words`() {
+        val segments = TipMarkup.segments("followed by 'of'")
+        assertEquals(2, segments.size)
+        assertEquals(TipMarkup.Segment("followed by ", null), segments[0])
+        assertEquals(TipMarkup.Segment("of", 0), segments[1])
+
+        // Several quoted words in one tip are numbered in order, which is what
+        // gives each of them a different colour.
+        val two = TipMarkup.segments("cast is 'singular', elsewhere it is 'plural'")
+        assertEquals(listOf("singular", "plural"), two.filter { it.isHighlighted }.map { it.text })
+        assertEquals(listOf(0, 1), two.mapNotNull { it.highlightIndex })
+
+        // The apostrophe in a possessive must not open a quote and swallow the
+        // word that genuinely deserves the colour.
+        val possessive = TipMarkup.segments("the object of 'impair' is often someone's 'ability' to")
+        assertEquals(
+            listOf("impair", "ability"),
+            possessive.filter { it.isHighlighted }.map { it.text },
+        )
+
+        // An unclosed quote is prose: the tip renders whole rather than losing
+        // its tail.
+        val unclosed = TipMarkup.segments("comes from 'a latin word")
+        assertEquals(1, unclosed.size)
+        assertFalse(unclosed[0].isHighlighted)
+
+        // What TalkBack reads: the same sentence without the quote marks.
+        assertEquals(
+            "notice the root certain, meaning sure",
+            TipMarkup.plainText("notice the root 'certain', meaning 'sure'"),
+        )
     }
 
     // MARK: Identity

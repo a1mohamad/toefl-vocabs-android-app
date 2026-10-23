@@ -379,9 +379,11 @@ copied across rather than re-made.
 
 ### Cutting a release build
 
+Tags are annotated; `<next>` is the version being shipped.
+
 ```bash
-git tag -a v2.1 -m "v2.1"
-git push origin v2.1
+git tag -a v<next> -m "v<next>"
+git push origin v<next>
 ```
 
 That triggers `release-build`, which restores the keystore from Actions secrets,

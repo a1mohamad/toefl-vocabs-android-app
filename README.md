@@ -558,10 +558,11 @@ For anyone installing the app, the [Download](#download) section above is the
 whole story. This section is for cutting a new build.
 
 Regular pushes only run the content lint, the unit tests and the emulator check.
-A signed, installable APK requires a version tag:
+A signed, installable APK requires a version tag. Tags here are annotated, and
+`<next>` is the version being shipped:
 
 ```bash
-git tag -a v2.0 -m "v2.0" && git push origin v2.0
+git tag -a v<next> -m "v<next>" && git push origin v<next>
 ```
 
 That triggers the `release-build` job, which restores the keystore from Actions
@@ -570,11 +571,11 @@ uploads `TOEFLVocab-<tag>.apk` as a workflow artifact. Publishing is a separate,
 deliberate step — download that artifact, then attach it to a GitHub Release:
 
 ```bash
-gh release create v2.0 --draft --notes-file RELEASE_NOTES.md TOEFLVocab-v2.0.apk
+gh release create v<next> --draft --notes-file RELEASE_NOTES.md TOEFLVocab-v<next>.apk
 ```
 
 Check the draft renders, then publish it with
-`gh release edit v2.0 --draft=false`.
+`gh release edit v<next> --draft=false`.
 
 > **Keep the signing keystore backed up.** Every future update must be signed
 > with the same key — losing it means no existing installation can ever be

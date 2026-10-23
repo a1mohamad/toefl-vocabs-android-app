@@ -157,12 +157,46 @@ object ScreenshotHarness {
             ?: catalog.allItems.firstOrNull { it.usageTips.isNotEmpty() }
 
     /**
+     * Steps the session forward until [matches] is true of the current word, then
+     * reveals it. Bounded rather than `while (true)`: a logic slip here would
+     * hang the app on the main thread and the capture step would time out with
+     * nothing useful to show.
+     *
+     * Falls back to revealing whatever is on screen, because a screenshot of the
+     * wrong word is still a screenshot; an empty one is not.
+     */
+    private fun driveTo(
+        viewModel: PracticeViewModel,
+        revealAs: Boolean = true,
+        matches: (VocabItem) -> Boolean,
+    ) {
+        var steps = 0
+        while (viewModel.phase != PracticeViewModel.Phase.Finished && steps < 500) {
+            steps += 1
+            val item = viewModel.currentItem
+            if (item != null && matches(item)) {
+                if (viewModel.revealedAnswer == null) viewModel.answer(correct = revealAs)
+                return
+            }
+            if (viewModel.revealedAnswer == null) {
+                viewModel.answer(correct = true)
+            } else {
+                viewModel.advance()
+            }
+        }
+    }
+
+    /**
      * Drives a live session far enough to photograph the revealed, tip and
      * summary states. Called from the practice screen, which owns the view model.
      */
     fun advance(viewModel: PracticeViewModel) {
         when (requestedScreen) {
-            "practice-revealed" -> viewModel.answer(correct = false)
+            // Drive to a word the book gives several meanings, so the screen
+            // that exists to show the numbered list actually shows one. The
+            // adaptive queue decides what comes first, and that is often a
+            // single-meaning word.
+            "practice-revealed" -> driveTo(viewModel, revealAs = false) { it.meanings.size > 1 }
 
             "practice-tip" -> {
                 // The session opens on whichever word the adaptive queue ranks
@@ -176,19 +210,7 @@ object ScreenshotHarness {
                     viewModel.answer(correct = true)
                     return
                 }
-                var steps = 0
-                while (viewModel.phase != PracticeViewModel.Phase.Finished && steps < 500) {
-                    steps += 1
-                    if (viewModel.currentItem?.term == target) {
-                        if (viewModel.revealedAnswer == null) viewModel.answer(correct = true)
-                        return
-                    }
-                    if (viewModel.revealedAnswer == null) {
-                        viewModel.answer(correct = true)
-                    } else {
-                        viewModel.advance()
-                    }
-                }
+                driveTo(viewModel) { it.term == target }
             }
 
             "summary" -> {

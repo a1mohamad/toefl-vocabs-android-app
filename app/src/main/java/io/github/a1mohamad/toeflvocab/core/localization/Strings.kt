@@ -182,7 +182,7 @@ class Strings(language: AppLanguage) {
             StringKey.TabSettings to "Settings",
 
             StringKey.LibraryTitle to "Library",
-            StringKey.LibrarySubtitle to "%d words across two books",
+            StringKey.LibrarySubtitle to "%d words across %d books",
             StringKey.LibraryContinue to "Pick up where you left off",
             StringKey.LibraryEmpty to "No vocabulary found",
             StringKey.LibraryEmptyHint to "The bundled content files could not be read. This is a packaging problem, not something you did.",
@@ -328,7 +328,7 @@ class Strings(language: AppLanguage) {
             StringKey.TabSettings to "تنظیمات",
 
             StringKey.LibraryTitle to "کتابخانه",
-            StringKey.LibrarySubtitle to "%d واژه در دو کتاب",
+            StringKey.LibrarySubtitle to "%d واژه در %d کتاب",
             StringKey.LibraryContinue to "ادامه از جایی که بودید",
             StringKey.LibraryEmpty to "واژه‌ای پیدا نشد",
             StringKey.LibraryEmptyHint to "فایل‌های محتوا خوانده نشدند. این یک مشکل بسته‌بندی برنامه است.",

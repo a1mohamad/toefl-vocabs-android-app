@@ -142,11 +142,12 @@ data class VocabItem(
     val term: String,
     val definition: String,
     /**
-     * Usage note that the source data appends to the definition after ` --- `,
-     * e.g. "followed by in". Not part of the meaning, so it is carried
-     * separately and presented as a hint rather than as dictionary text.
+     * Usage notes that the source data appends to the definition after ` --- `,
+     * e.g. "followed by 'in'". One entry per marker, because a word can carry
+     * more than one note. None of this is part of the meaning, so it is kept
+     * apart and shown as advice rather than as dictionary text.
      */
-    val usageTip: String? = null,
+    val usageTips: List<String> = emptyList(),
     /**
      * Position within its category, straight from the source array. This is
      * what makes a never-practised section play back in book order.
@@ -156,6 +157,31 @@ data class VocabItem(
     val bookID: String get() = id.bookID
     val sectionID: String get() = id.sectionID
     val category: VocabCategory get() = id.category
+
+    /**
+     * The definition as a list of separate meanings.
+     *
+     * The source data writes every sense of a word on one `;`-separated line
+     * ("keep; keep up; carry on; uphold"), which is dense to read in the middle
+     * of a drill — six meanings arrive as one grey paragraph and none of them
+     * stands out. Splitting them lets the practice screen number them one per
+     * line.
+     *
+     * The split lives here rather than in the composable so that the screen and
+     * TalkBack always read the same list. A definition with no `;` comes back as
+     * a single element, so a caller can treat this as *the* meaning list and
+     * only check `size > 1` to decide whether to number it.
+     */
+    val meanings: List<String> get() = splitMeanings(definition)
+
+    companion object {
+        fun splitMeanings(definition: String): List<String> {
+            val parts = definition.split(";").map { it.trim() }.filter { it.isNotEmpty() }
+            // A definition of only semicolons would otherwise come back empty
+            // and leave the practice screen with no answer on it at all.
+            return parts.ifEmpty { listOf(definition) }
+        }
+    }
 }
 
 // MARK: - Section

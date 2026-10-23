@@ -53,7 +53,8 @@ sealed class ContentError(message: String) : Exception(message) {
  *    alphabetically, with a log warning.
  *
  * Definitions are also split here: everything after a `---` marker is a usage
- * note rather than part of the meaning, and is lifted into `usageTip`.
+ * note rather than part of the meaning, and each marker lifts one entry into
+ * `usageTips`.
  *
  * Anything present in `vocabs.json` but missing from `catalog.json` is still
  * shown — appended at the end with a generated title — so adding a day and
@@ -221,7 +222,7 @@ object VocabCatalogLoader {
 
             for (word in list.words) {
                 val term = word.term.trim()
-                val (definition, usageTip) = splitUsageTip(word.definition)
+                val (definition, usageTips) = splitDefinition(word.definition)
 
                 // Skip rather than throw: one bad row should never cost the user
                 // the whole library.
@@ -245,7 +246,7 @@ object VocabCatalogLoader {
                         ),
                         term = term,
                         definition = definition,
-                        usageTip = usageTip,
+                        usageTips = usageTips,
                         orderIndex = items.size,
                     )
                 )
@@ -274,32 +275,36 @@ object VocabCatalogLoader {
     /** The marker the source data uses to append a usage note to a definition. */
     const val USAGE_TIP_SEPARATOR = "---"
 
-    /** The definition and, if present, the usage note that followed the marker. */
-    data class UsageTipSplit(val definition: String, val usageTip: String?)
+    /** The meaning and the usage notes that followed the markers. */
+    data class DefinitionSplit(val definition: String, val usageTips: List<String>)
 
     /**
-     * Splits `"meaning --- usage note"` into its two halves.
+     * Splits `"meaning --- note --- note"` into the meaning and its notes.
      *
-     * The note is grammar advice ("followed by in", "usually comes before the
+     * A note is grammar advice ("followed by 'in'", "usually comes before the
      * noun it describes"), not part of what the word means, so it must not be
      * read as the answer during practice.
      *
+     * Each marker starts a new note rather than extending the previous one:
+     * several words in the 400 list carry two independent pieces of advice ("is
+     * often in the 'passive' voice --- often followed by 'of'"), and gluing them
+     * into one paragraph loses the fact that they are two.
+     *
      * A row that is *only* a note, or only whitespace either side of the marker,
-     * keeps its original text and reports no tip — losing the meaning would be a
-     * far worse outcome than showing an unsplit line.
+     * keeps its original text and reports no notes — losing the meaning would be
+     * a far worse outcome than showing an unsplit line.
      */
-    fun splitUsageTip(raw: String): UsageTipSplit {
+    fun splitDefinition(raw: String): DefinitionSplit {
         val whole = raw.trim()
 
         val parts = whole.split(USAGE_TIP_SEPARATOR)
-        if (parts.size <= 1) return UsageTipSplit(whole, null)
+        if (parts.size <= 1) return DefinitionSplit(whole, emptyList())
 
         val definition = parts[0].trim()
-        // Any further markers belong to the note, not to another field.
-        val tip = parts.drop(1).joinToString(USAGE_TIP_SEPARATOR).trim()
+        val tips = parts.drop(1).map { it.trim() }.filter { it.isNotEmpty() }
 
-        if (definition.isEmpty()) return UsageTipSplit(whole, null)
-        return UsageTipSplit(definition, tip.ifEmpty { null })
+        if (definition.isEmpty()) return DefinitionSplit(whole, emptyList())
+        return DefinitionSplit(definition, tips)
     }
 
     /** `day_9` -> `Day 9`, `review_1` -> `Review 1`, `504` -> `504`. */

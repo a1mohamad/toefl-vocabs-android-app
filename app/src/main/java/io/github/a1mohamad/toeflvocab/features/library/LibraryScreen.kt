@@ -83,6 +83,7 @@ fun LibraryScreen(modifier: Modifier = Modifier) {
                 text = strings.format(
                     StringKey.LibrarySubtitle,
                     content.catalog.totalWordCount,
+                    content.catalog.books.size,
                 ),
                 style = AppFont.body,
                 color = Palette.textSecondary,

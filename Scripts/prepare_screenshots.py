@@ -5,7 +5,7 @@ Turn raw CI screenshots into the small set the README displays.
 Why this exists
 ---------------
 The emulator captures at the device's native 1080x2400, which is 100-400 KB per
-image. Seven of those is well over a megabyte of binaries in a repository whose
+image. Eight of those is well over a megabyte of binaries in a repository whose
 entire source is a few hundred KB, and GitHub renders them at a fraction of that
 size anyway.
 
@@ -41,13 +41,14 @@ DESTINATION = REPO_ROOT / "assets" / "screenshots"
 TARGET_WIDTH = 460
 
 # Only the images the README actually shows. Capturing every screen on every run
-# is useful for spotting regressions in the CI artifact; committing all eighteen
+# is useful for spotting regressions in the CI artifact; committing all twenty
 # is not.
 WANTED = [
     "practice-dark.png",
     "library-dark.png",
     "section-dark.png",
     "practice-revealed-dark.png",
+    "practice-tip-dark.png",
     "summary-dark.png",
     "reports-light.png",
     "reports-dark.png",
